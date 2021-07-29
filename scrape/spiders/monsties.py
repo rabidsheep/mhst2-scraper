@@ -1,18 +1,18 @@
 import os
-from xml.dom import minidom
-
 import scrapy
+
 
 class MonstieSpider(scrapy.Spider):
     name = "monstiedb"
-    if (os.path.exists("results/monsties.json")):
+    if os.path.exists("results/monsties.json"):
             os.remove("results/monsties.json")
             print("Previous file deleted.")
-    
+
     allowed_domains = ["kiranico.com"]
     custom_settings = {
         'FEED_FORMAT': 'json',
         'FEED_URI': 'results/monsties.json',
+        'ITEM_PIPELINES': {'scrape.pipelines.RawDataPipeline': 300},
     }
 
     @classmethod
@@ -31,12 +31,13 @@ class MonstieSpider(scrapy.Spider):
             data = {}
 
             # basic data for each monstie, contained in first data cell
+            data["id"] = monstie.css("img::attr(src)").extract_first().split("micons/micon")[1].split(".png")[0]
             data["name"] = monstie.xpath(".//td[1]/div[1]/text()").get()[1:]
             data["tendency"] = monstie.xpath(".//td[1]/small/div[1]/text()").get()
             data["kinship"] = monstie.xpath(".//td[1]/small/div[2]/text()").get()
             data["actions"] = [monstie.xpath(".//td[1]/small/div[3]/text()").get()]
             # check if monstie has second action
-            if (monstie.xpath(".//td[1]/small/div[4]/text()").get()):
+            if monstie.xpath(".//td[1]/small/div[4]/text()").get():
                 data["actions"].append(monstie.xpath(".//td[1]/small/div[4]/text()").get())
 
             # 
@@ -73,4 +74,4 @@ class MonstieSpider(scrapy.Spider):
                 else:
                     continue
             
-            yield(data)
+            yield data
